@@ -73,6 +73,8 @@ const Scan = () => {
     }, 3000);
   };
 
+  const [scanMode, setScanMode] = useState('Auto'); // 'Auto', 'Check-in', 'Check-out'
+
   const scanLoop = async () => {
     if (!isScanning.current || !videoRef.current) return;
 
@@ -83,8 +85,13 @@ const Scan = () => {
         if (result && result.faceFound) {
           if (result.matched) {
             const staff = result.staff;
+            
+            // If we are in Check-in or Check-out mode, send that explicit status.
+            // If Auto, send null so backend toggles automatically.
+            const apiMode = scanMode === 'Auto' ? null : scanMode;
+
             // Attempt to log attendance
-            const logRes = await logAttendance(staff.id, staff.name);
+            const logRes = await logAttendance(staff.id, staff.name, apiMode);
             
             if (logRes.success) {
               showResult('success', `${logRes.log.status} Successful`, staff);
@@ -114,6 +121,27 @@ const Scan = () => {
       <div className="mb-6 text-center">
         <h2 className="text-3xl font-bold text-gray-900">Attendance Scanner</h2>
         <p className="text-gray-600 mt-2">Look at the camera to check-in or check-out</p>
+        
+        <div className="mt-4 flex justify-center space-x-4">
+          <button 
+            onClick={() => setScanMode('Auto')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Auto' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          >
+            Auto Mode
+          </button>
+          <button 
+            onClick={() => setScanMode('Check-in')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Check-in' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          >
+            Check In
+          </button>
+          <button 
+            onClick={() => setScanMode('Check-out')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Check-out' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          >
+            Check Out
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center">
