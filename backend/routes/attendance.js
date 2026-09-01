@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // POST /api/attendance - Log attendance
 router.post('/', async (req, res) => {
   try {
-    const { staffId } = req.body;
+    const { staffId, type } = req.body;
     if (!staffId) return res.status(400).json({ error: 'Staff ID is required' });
 
     const staff = await prisma.staff.findUnique({ where: { staffId } });
@@ -43,8 +43,15 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // If even number of logs today, it's a check-in. If odd, it's a check-out.
-    const isCheckIn = logsToday.length % 2 === 0;
+    // If type is explicitly passed, use it. Otherwise toggle.
+    let isCheckIn;
+    if (type === 'Check-in') {
+      isCheckIn = true;
+    } else if (type === 'Check-out') {
+      isCheckIn = false;
+    } else {
+      isCheckIn = logsToday.length % 2 === 0;
+    }
 
     let attendance;
     if (isCheckIn) {

@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import Enrollment from './pages/Enrollment';
 import Scan from './pages/Scan';
 import History from './pages/History';
+import Hikvision from './pages/Hikvision';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/enroll" element={<Enrollment />} />
             <Route path="/scan" element={<Scan />} />
             <Route path="/history" element={<History />} />
+            <Route path="/hikvision" element={<Hikvision />} />
           </Routes>
         </main>
       </div>

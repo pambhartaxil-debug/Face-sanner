@@ -1,44 +1,50 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Camera, UserPlus, History } from 'lucide-react';
+import { Camera, UserPlus, Clock, Server } from 'lucide-react';
 
 const Sidebar = () => {
-  const navItems = [
-    { path: '/scan', icon: Camera, label: 'Scan Attendance' },
-    { path: '/enroll', icon: UserPlus, label: 'Enroll Staff' },
-    { path: '/history', icon: History, label: 'History Logs' }
-  ];
-
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">FaceGuard</h1>
-        <p className="text-sm text-gray-500 mt-1">Staff Attendance</p>
+    <div className="w-64 bg-blue-900 text-white flex flex-col h-full shadow-xl">
+      <div className="p-6 border-b border-blue-800">
+        <h1 className="text-2xl font-bold flex items-center">
+          <Camera className="mr-2" />
+          FaceID
+        </h1>
+        <p className="text-blue-300 text-sm mt-1">Attendance System</p>
       </div>
       
-      <nav className="flex-1 mt-6">
-        <ul>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center px-6 py-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.label}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
+      <nav className="flex-1 p-4 space-y-2">
+        <NavLink 
+          to="/scan" 
+          className={({ isActive }) => `flex items-center space-x-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}
+        >
+          <Camera size={20} />
+          <span>Scanner</span>
+        </NavLink>
+        
+        <NavLink 
+          to="/enroll" 
+          className={({ isActive }) => `flex items-center space-x-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}
+        >
+          <UserPlus size={20} />
+          <span>Enroll Staff</span>
+        </NavLink>
+        
+        <NavLink 
+          to="/history" 
+          className={({ isActive }) => `flex items-center space-x-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}
+        >
+          <Clock size={20} />
+          <span>History</span>
+        </NavLink>
+
+        <NavLink 
+          to="/hikvision" 
+          className={({ isActive }) => `flex items-center space-x-3 p-3 rounded-lg transition-colors ${isActive ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800/50'}`}
+        >
+          <Server size={20} />
+          <span>Hikvision Sync</span>
+        </NavLink>
       </nav>
       
       <div className="p-6 border-t border-gray-200">
