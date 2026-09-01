@@ -46,8 +46,8 @@ export const matchFace = async (videoElement, enrolledStaff) => {
     );
   });
 
-  // Threshold of 0.6 is a good default for face recognition
-  const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+  // Lower threshold = stricter matching. 0.45 prevents false positives better than 0.6
+  const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
   const match = faceMatcher.findBestMatch(detection.descriptor);
 
   if (match.label !== 'unknown') {
@@ -60,5 +60,5 @@ export const matchFace = async (videoElement, enrolledStaff) => {
     };
   }
 
-  return { matched: false, faceFound: true };
+  return { matched: false, faceFound: true, distance: match.distance };
 };
