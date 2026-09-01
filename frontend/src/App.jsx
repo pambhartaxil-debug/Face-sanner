@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Enrollment from './pages/Enrollment';
 import Scan from './pages/Scan';
@@ -7,7 +7,7 @@ import History from './pages/History';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="flex h-screen bg-gray-100">
         <Sidebar />
         <main className="flex-1 overflow-y-auto">
@@ -19,7 +19,7 @@ function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
