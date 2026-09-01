@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Scanner | AI Detection System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Face Scanner</h1>
+            <p>AI Face Detection System</p>
+        </header>
+
+        <main class="main-content">
+            <section class="scanner-section">
+                <div class="scanner-container">
+                    <div class="corner top-left"></div>
+                    <div class="corner top-right"></div>
+                    <div class="corner bottom-left"></div>
+                    <div class="corner bottom-right"></div>
+                    
+                    <video id="camera-video" autoplay playsinline></video>
+                    
+                    <div class="scanning-line" id="scanning-line"></div>
+                    <div class="scanner-overlay"></div>
+                </div>
+                
+                <div class="camera-status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Camera not started</span>
+                </div>
+
+                <div class="controls">
+                    <button id="start-btn" class="btn primary-btn">Start Camera</button>
+                    <button id="scan-btn" class="btn secondary-btn" disabled>Scan Face</button>
+                </div>
+            </section>
+
+            <section class="results-section">
+                <div class="glass-panel">
+                    <h2>Scan Results</h2>
+                    <div class="result-details">
+                        <div class="result-row">
+                            <span class="label">Name:</span>
+                            <span class="value" id="result-name">Unknown</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">Confidence:</span>
+                            <span class="value" id="result-confidence">0%</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">Status:</span>
+                            <span class="value" id="result-status">Waiting</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">Scan Time:</span>
+                            <span class="value" id="result-time">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

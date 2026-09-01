@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin, manager
+  createdAt    DateTime @default(now())
+}
+
+model Staff {
+  id             Int          @id @default(autoincrement())
+  staffId        String       @unique
+  name           String
+  department     String
+  photoUrl       String?
+  // Store face descriptor as a JSON string (Array of 128 floats)
+  faceDescriptor String       
+  createdAt      DateTime     @default(now())
+  attendances    Attendance[]
+}
+
+model Attendance {
+  id           Int       @id @default(autoincrement())
+  staffId      Int
+  staff        Staff     @relation(fields: [staffId], references: [id])
+  date         DateTime  @default(now())
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+  status       String    @default("present") // present, absent
+  createdAt    DateTime  @default(now())
+}
