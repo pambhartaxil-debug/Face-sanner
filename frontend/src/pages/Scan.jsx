@@ -73,12 +73,35 @@ const Scan = () => {
     }, 3000);
   };
 
-  const [scanMode, setScanMode] = useState('Auto'); // 'Auto', 'Check-in', 'Check-out'
+  const [scanMode, setScanMode] = useState('Prompt'); // 'Prompt', 'Check-in', 'Check-out'
+  const [pendingAction, setPendingAction] = useState(null);
+  const pendingActionRef = useRef(null);
+
+  const handleManualAction = async (status) => {
+    if (!pendingAction) return;
+    const staff = pendingAction;
+    
+    setPendingAction(null);
+    pendingActionRef.current = null;
+
+    if (status === 'Cancel') {
+      showResult('info', 'Cancelled', staff);
+      return;
+    }
+
+    const logRes = await logAttendance(staff.id, staff.name, status);
+    if (logRes.success) {
+      showResult('success', `${logRes.log.status} Successful`, staff);
+    } else {
+      showResult('info', logRes.message, staff);
+    }
+  };
 
   const scanLoop = async () => {
     if (!isScanning.current || !videoRef.current) return;
 
-    if (!scanResultRef.current || scanResultRef.current.type === 'error') {
+    // Only scan if no result is showing AND no pending action is waiting
+    if (!scanResultRef.current && !pendingActionRef.current) {
       try {
         const result = await matchFace(videoRef.current, enrolledStaffRef.current);
         
@@ -86,18 +109,19 @@ const Scan = () => {
           if (result.matched) {
             const staff = result.staff;
             
-            // If we are in Check-in or Check-out mode, send that explicit status.
-            // If Auto, send null so backend toggles automatically.
-            const apiMode = scanMode === 'Auto' ? null : scanMode;
-
-            // Attempt to log attendance
-            const logRes = await logAttendance(staff.id, staff.name, apiMode);
-            
-            if (logRes.success) {
-              showResult('success', `${logRes.log.status} Successful`, staff);
+            if (scanMode === 'Prompt') {
+              // Ask the user what they want to do
+              setPendingAction(staff);
+              pendingActionRef.current = staff;
             } else {
-              // Cooldown active or error
-              showResult('info', logRes.message, staff);
+              // Attempt to log attendance immediately using chosen mode
+              const logRes = await logAttendance(staff.id, staff.name, scanMode);
+              
+              if (logRes.success) {
+                showResult('success', `${logRes.log.status} Successful`, staff);
+              } else {
+                showResult('info', logRes.message, staff);
+              }
             }
           } else {
             showResult('error', 'Not Recognized. Please enroll first.');
@@ -124,22 +148,22 @@ const Scan = () => {
         
         <div className="mt-4 flex justify-center space-x-4">
           <button 
-            onClick={() => setScanMode('Auto')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Auto' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setScanMode('Prompt')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Prompt' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           >
-            Auto Mode
+            Ask Me
           </button>
           <button 
             onClick={() => setScanMode('Check-in')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Check-in' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           >
-            Check In
+            Check In Always
           </button>
           <button 
             onClick={() => setScanMode('Check-out')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${scanMode === 'Check-out' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           >
-            Check Out
+            Check Out Always
           </button>
         </div>
       </div>
@@ -164,20 +188,60 @@ const Scan = () => {
                 autoPlay 
                 muted 
                 playsInline 
-                className="w-full h-full object-cover transform scale-x-[-1]" // Mirror the video
+                className="w-full h-full object-cover transform scale-x-[-1]" 
               />
               
-              {/* Scan Overlay UI */}
               <div className="absolute inset-0 border-[6px] border-white/10 pointer-events-none rounded-2xl"></div>
               
-              {/* Scanning crosshairs effect */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-                <div className="w-64 h-64 border-2 border-white/50 border-dashed rounded-[40px] animate-[spin_10s_linear_infinite]"></div>
-              </div>
+              {!pendingAction && !scanResult && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+                  <div className="w-64 h-64 border-2 border-white/50 border-dashed rounded-[40px] animate-[spin_10s_linear_infinite]"></div>
+                </div>
+              )}
+
+              {/* Pending Action Overlay (The "Ask Me" Dialog) */}
+              {pendingAction && (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-6 backdrop-blur-sm z-10">
+                  <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+                    <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-4 border-blue-100 mb-4 shadow-md">
+                      {pendingAction.photoUrl ? (
+                        <img src={pendingAction.photoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-500 font-bold text-2xl">
+                          {pendingAction.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">Welcome, {pendingAction.name}!</h3>
+                    <p className="text-gray-500 mb-6 text-sm">Please select an action below to log your attendance.</p>
+                    
+                    <div className="space-y-3">
+                      <button 
+                        onClick={() => handleManualAction('Check-in')}
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium shadow-sm transition-colors"
+                      >
+                        Check In
+                      </button>
+                      <button 
+                        onClick={() => handleManualAction('Check-out')}
+                        className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-medium shadow-sm transition-colors"
+                      >
+                        Check Out
+                      </button>
+                      <button 
+                        onClick={() => handleManualAction('Cancel')}
+                        className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Scan Result Overlay */}
-              {scanResult && (
-                <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 rounded-xl p-4 shadow-2xl backdrop-blur-md flex items-center space-x-4 min-w-[320px] transition-all duration-300 ${
+              {scanResult && !pendingAction && (
+                <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 rounded-xl p-4 shadow-2xl backdrop-blur-md flex items-center space-x-4 min-w-[320px] transition-all duration-300 z-20 ${
                   scanResult.type === 'success' ? 'bg-green-500/90 text-white' : 
                   scanResult.type === 'error' ? 'bg-red-500/90 text-white' : 
                   'bg-blue-500/90 text-white'
@@ -205,9 +269,11 @@ const Scan = () => {
         </div>
         
         <div className="mt-8 flex items-center space-x-2 text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm">
-          <div className={`w-2.5 h-2.5 rounded-full ${isModelsLoaded && !cameraError ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
+          <div className={`w-2.5 h-2.5 rounded-full ${isModelsLoaded && !cameraError && !pendingAction ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
           <span className="text-sm font-medium">
-            {isModelsLoaded && !cameraError ? 'System Active & Scanning' : 'System Offline'}
+            {isModelsLoaded && !cameraError 
+              ? (pendingAction ? 'Waiting for Selection' : 'System Active & Scanning') 
+              : 'System Offline'}
           </span>
         </div>
       </div>
