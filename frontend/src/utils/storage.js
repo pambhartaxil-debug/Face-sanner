@@ -1,13 +1,18 @@
 const API_BASE_URL = 'http://localhost:5001/api';
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 export const getEnrolledStaff = async () => {
+  if (!isLocal) {
+    const data = localStorage.getItem('enrolledStaff');
+    return data ? JSON.parse(data) : [];
+  }
+  
   try {
     const res = await fetch(`${API_BASE_URL}/staff`);
     if (!res.ok) throw new Error('Failed to fetch staff');
     const data = await res.json();
-    // Transform backend fields to match what frontend expects
     return data.map(staff => ({
-      id: staff.staffId, // frontend uses `id` as `staffId` in FaceMatcher
+      id: staff.staffId,
       name: staff.name,
       department: staff.department,
       photoUrl: staff.photoUrl,
@@ -20,6 +25,14 @@ export const getEnrolledStaff = async () => {
 };
 
 export const enrollStaff = async (staffData) => {
+  if (!isLocal) {
+    const staff = await getEnrolledStaff();
+    const staffToSave = { ...staffData, descriptor: Array.from(staffData.descriptor) };
+    staff.push(staffToSave);
+    localStorage.setItem('enrolledStaff', JSON.stringify(staff));
+    return staffToSave;
+  }
+
   try {
     const res = await fetch(`${API_BASE_URL}/staff`, {
       method: 'POST',
@@ -29,7 +42,7 @@ export const enrollStaff = async (staffData) => {
         name: staffData.name,
         department: staffData.department,
         photoUrl: staffData.photoUrl,
-        faceDescriptor: staffData.descriptor
+        faceDescriptor: Array.from(staffData.descriptor)
       })
     });
     if (!res.ok) {
@@ -44,15 +57,17 @@ export const enrollStaff = async (staffData) => {
 };
 
 export const getAttendanceLogs = async () => {
+  if (!isLocal) {
+    const logs = localStorage.getItem('attendanceLogs');
+    return logs ? JSON.parse(logs) : [];
+  }
+
   try {
     const res = await fetch(`${API_BASE_URL}/attendance`);
     if (!res.ok) throw new Error('Failed to fetch logs');
     const data = await res.json();
     
-    // Transform backend fields to match what frontend expects
     return data.map(log => {
-      // Backend handles checkIn and checkOut separate times on same record or separate records.
-      // Based on our implementation, it creates a new record for every scan with either checkInTime or checkOutTime
       const time = log.checkInTime || log.checkOutTime || log.createdAt;
       const type = log.checkInTime ? 'Check-in' : 'Check-out';
       
@@ -71,6 +86,38 @@ export const getAttendanceLogs = async () => {
 };
 
 export const logAttendance = async (staffId, staffName, status = null) => {
+  if (!isLocal) {
+    const logs = await getAttendanceLogs();
+    const now = new Date();
+    
+    const lastLog = logs.find(log => log.staffId === staffId);
+    if (lastLog) {
+      const diffMins = (now - new Date(lastLog.timestamp)) / 60000;
+      if (diffMins < 1) {
+        return { success: false, message: 'Already checked in recently. Please wait 1 minute.' };
+      }
+    }
+
+    let finalStatus;
+    if (status) {
+      finalStatus = status;
+    } else {
+      finalStatus = (!lastLog || lastLog.status === 'Check-out') ? 'Check-in' : 'Check-out';
+    }
+
+    const newLog = {
+      id: Date.now().toString(),
+      staffId,
+      staffName,
+      timestamp: now.toISOString(),
+      status: finalStatus
+    };
+
+    logs.unshift(newLog);
+    localStorage.setItem('attendanceLogs', JSON.stringify(logs));
+    return { success: true, log: newLog };
+  }
+
   try {
     const res = await fetch(`${API_BASE_URL}/attendance`, {
       method: 'POST',
@@ -101,6 +148,17 @@ export const logAttendance = async (staffId, staffName, status = null) => {
 };
 
 export const syncHikvision = async (ip, username, password) => {
+  if (!isLocal) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ 
+          success: false, 
+          message: 'Hikvision Sync is only available when running locally (localhost) due to browser security.' 
+        });
+      }, 1500);
+    });
+  }
+
   try {
     const res = await fetch(`${API_BASE_URL}/hikvision/sync`, {
       method: 'POST',
